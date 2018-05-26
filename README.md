@@ -8,3 +8,6 @@ https://stackoverflow.com/questions/26893304/rejecting-isomorphisms-from-collect
 
 # great explanation for 1 Dim Weisfeiler-Lehman Method
 http://blog.smola.org/post/33412570425/the-weisfeiler-lehman-algorithm-and-estimation-on
+
+# patchy-san implementation
+https://github.com/seiya-kumada/patchy-san/tree/master/patchy-san
