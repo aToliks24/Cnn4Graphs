@@ -11,3 +11,6 @@ http://blog.smola.org/post/33412570425/the-weisfeiler-lehman-algorithm-and-estim
 
 # patchy-san implementation
 https://github.com/seiya-kumada/patchy-san/tree/master/patchy-san
+
+# graph canonitation examples (including Nauty and 1-DimWeisfeiler-Lehman)
+http://dabacon.org/pontiff/?p=4148
