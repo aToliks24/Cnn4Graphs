@@ -1,10 +1,7 @@
-import networkx as nx
 import numpy as np
 
-
-
 def SelNodeSeq(Graph,labeling_func,stride,width,k):
-    v_sorted = sorted(g.degree(), key=lambda tup: tup[1], reverse=True)[:width]
+    v_sorted = sorted(Graph.degree(), key=lambda tup: tup[1], reverse=True)[:width]
     i=0
     j=0
     input_channel=[]
@@ -72,14 +69,12 @@ def random_order_labeling(Graph, bfs_layer):
     return l
 
 
-
+'''
 
 g=nx.read_graphml('Datasets/DD/DD_1.graphml')
-n=g.nodes()
-sorted_nodes_by_degree=sorted(g.degree(),key=lambda tup: tup[1],reverse=True)
-
 #na=NeighAssemb(g,'n1',500)
 #ng=NormalizeGraph(g, na, random_order_labeling, 500)
 #f=ReceptiveField(g,random_order_labeling,'n1',100)
 ns=SelNodeSeq(g,random_order_labeling,stride=3,width=10,k=100)
 p=0
+'''

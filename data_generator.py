@@ -1,20 +1,25 @@
 import numpy as np
 import keras
-
+import os
+import preprocess
+import networkx as nx
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels,data_dir, batch_size=32, dim=(32,32,32), n_channels=1,
-                 n_classes=10, shuffle=True):
+    def __init__(self, list_IDs, labels,data_dir, batch_size=32, width=20,stride=1,k=5, n_classes=2, shuffle=True):
         'Initialization'
-        self.dim = dim
+        self.width=width
+        self.stride=stride
+        self.k=k
+        self.dim = (k,width,1)
         self.batch_size = batch_size
         self.labels = labels
         self.list_IDs = list_IDs
-        self.n_channels = n_channels
+        self.n_channels = width
         self.n_classes = n_classes
         self.shuffle = shuffle
+        self.data_dir = data_dir
         self.on_epoch_end()
-        self.data_dir=data_dir
+
 
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -48,7 +53,14 @@ class DataGenerator(keras.utils.Sequence):
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
-            X[i,] = np.load(self.data_dir + ID + '.npy')
+            curr_path=self.data_dir + ID
+            if os.path.exists(curr_path+ '.npz'):
+                X[i,] = np.load(curr_path)['arr_0']
+            else:
+                g=nx.read_graphml(curr_path)
+                pp= preprocess.SelNodeSeq(g,preprocess.random_order_labeling,stride=self.stride,width=self.width,k=self.k)
+                np.savez_compressed(curr_path,pp)
+                X[i,]=pp
 
             # Store class
             y[i] = self.labels[ID]
