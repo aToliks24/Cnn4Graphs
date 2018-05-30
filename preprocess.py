@@ -13,7 +13,7 @@ def SelNodeSeq(Graph,labeling_func,stride,width,k):
             f=ReceptiveField(Graph,labeling_func,v_sorted[i][0],k)
         else:
             f=ZeroReceptiveField(k)
-        input_channel.append(f)
+        input_channel.extend(f)
         i+=stride
         j+=1
     return np.array(input_channel)
