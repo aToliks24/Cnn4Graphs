@@ -34,7 +34,6 @@ def canonical_subgraph(G, nodes):
     for v in sub_G.nodes():
         nodes_lbls_prev[v] =[None, None]
         nodes_lbls[v] = [str(1).zfill(n_dig), None]
-    print(nodes_lbls)
 
     while not is_canonical(nodes_lbls_prev, nodes_lbls):
         for v in nodes_lbls.keys():
@@ -54,7 +53,7 @@ def canonical_subgraph(G, nodes):
                 prev_l = nodes_lbls[v].copy()
                 rank += 1
             nodes_lbls[v][0] = str(rank).zfill(n_dig)
-    print(nodes_lbls)
+    return nodes_lbls
 
 
 def SelNodeSeq(Graph,labeling_func,stride,width,k):
@@ -143,3 +142,5 @@ g=nx.read_graphml('Datasets/DD/DD_1.graphml')
 ns=SelNodeSeq(g,random_order_labeling,stride=3,width=10,k=100)
 p=0
 '''
+
+print(test_graph_cannonization())
