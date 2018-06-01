@@ -53,30 +53,36 @@ def canonical_subgraph(G, nodes):
                 prev_l = nodes_lbls[v].copy()
                 rank += 1
             nodes_lbls[v][0] = str(rank).zfill(n_dig)
-    return nodes_lbls
+    return list(nodes_lbls.keys()).reverse()
 
 
-def SelNodeSeq(Graph,labeling_func,stride,width,k):
+def SelNodeSeq(Graph, canonization_func, stride, width, k):
     v_sorted = sorted(Graph.degree(), key=lambda tup: tup[1], reverse=True)[:width]
     i=0
     j=0
-    input_channel=[]
+    input_channel_nodes=[]
+    input_channe=[]
     while j< width:
         if i < len(v_sorted):
-            f=ReceptiveField(Graph,labeling_func,v_sorted[i][0],k)
+            f=ReceptiveField(Graph, canonization_func, v_sorted[i][0], k)
         else:
             f=ZeroReceptiveField(k)
-        input_channel.extend(f)
+        input_channel_nodes.extend(f)
         i+=stride
         j+=1
-    return np.array(input_channel)
+    for icn in input_channel_nodes:
+        if icn in Graph:
+            input_channe.append(list(Graph.nodes.data()[icn].values())[0])
+        else:
+            input_channe.append(0)
+    return input_channe
 
 
 
 
-def ReceptiveField(Graph,labeling_func,v,k):
+def ReceptiveField(Graph, canonization_func, v, k):
     N=NeighAssemb(Graph,v,k)
-    G=NormalizeGraph(Graph,N,labeling_func,k)
+    G=NormalizeGraph(Graph, N, canonization_func, k)
     return G
 
 
@@ -118,10 +124,12 @@ def get_next_bfs_layer(Graph, prev_layer,colored_list):
         return stack_of_next_layer,colored_list
 
 
-def NormalizeGraph(Graph,U,labeling_func,k):
+def NormalizeGraph(Graph, U, canonization_func, k):
     sorted_layers=[]
+    all_nodes=[]
     for bfs_layer in U:
-        sorted_layers.extend(labeling_func(Graph,bfs_layer))
+        sorted_layers.extend(canonization_func(Graph, bfs_layer))
+        all_nodes.extend(bfs_layer)
     if len(sorted_layers)<k:
         sorted_layers.extend(['d'+str(i) for i in range(k-len(sorted_layers))])
     return sorted_layers[:k]
@@ -143,4 +151,3 @@ ns=SelNodeSeq(g,random_order_labeling,stride=3,width=10,k=100)
 p=0
 '''
 
-print(test_graph_cannonization())
