@@ -6,7 +6,7 @@ import networkx as nx
 import time
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels,data_dir, batch_size=32, width=20,stride=1,k=5, n_classes=2, shuffle=True):
+    def __init__(self, list_IDs, labels,data_dir, n_classes,batch_size=32, width=20,stride=1,k=5, shuffle=True):
         'Initialization'
         self.width=width
         self.stride=stride
@@ -54,7 +54,7 @@ class DataGenerator(keras.utils.Sequence):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
         X_list = []
-        y = np.empty((self.batch_size), dtype=int)
+        y = []
 
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
@@ -69,7 +69,8 @@ class DataGenerator(keras.utils.Sequence):
                 X_list.append(np.array(pp))
 
             # Store class
-            y[i] = self.labels[ID]
+            y.append( self.labels[ID])
+        y=np.array(y)
         X=np.vstack(X_list)
 
         return np.expand_dims( X,axis=2), keras.utils.to_categorical(y, num_classes=self.n_classes)
