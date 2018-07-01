@@ -4,6 +4,9 @@ import preprocess
 import data_generator
 import time
 import numpy as np
+import os
+np.random.seed(7)
+
 
 '''
 def create_2Dcnn(k,width, num_of_classes,stride):  # doesn't work
@@ -15,9 +18,29 @@ def create_2Dcnn(k,width, num_of_classes,stride):  # doesn't work
     model.compile(optimizer='adadelta', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 '''
-np.random.seed(7)
 
 
+
+def prepare_paths(dataset_dict):
+    data_dir = dataset_dict['path']
+    f_data = dataset_dict['data']
+    f_labels = dataset_dict['labels']
+    labels_to_index = {}
+    with open(f_data, 'r') as r:
+        data = np.array([d[:-1] for d in r.readlines()])
+    with open(f_labels, 'r') as r:
+        labels = [float(l) for l in r.readlines()[0].split(' ')]
+        count = 0
+        for l in labels:
+            if l not in labels_to_index:
+                labels_to_index[l] = count
+                count += 1
+        labels = {data[i]: labels_to_index[labels[i]] for i in range(len(labels))}
+
+    filelist = [f for f in os.listdir(data_dir) if f.endswith(".npz")]
+    for f in filelist:
+        os.remove(os.path.join(data_dir, f))
+    return data, labels
 
 def create_1Dcnn(k,width, num_of_classes):
     model = Sequential()
@@ -30,24 +53,60 @@ def create_1Dcnn(k,width, num_of_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy')  # optimizer, metrics
     return model
 
-m=create_1Dcnn(20,5,2)
-f_labels='Datasets/mutag/mutag.label'
-f_data='Datasets/mutag/mutag.list'
-data_dir='Datasets/mutag/'
-with open(f_data,'r') as r:
-    data=np.array( [d[:-1] for d in r.readlines()])
 
-with open(f_labels,'r') as r:
-    labels=[ float(l) for l in r.readlines()[0].split(' ')]
-    labels={ data[i]:labels[i] for i in range(len(labels))  }
-rands=np.random.random(len(data))
-X_train=data[rands<=0.8]
-X_test=data[rands>0.8]
+Datasets={'enzymes':{'path':'Datasets/enzymes/',
+                    'labels':'Datasets/enzymes/enzymes.label',
+                     'data':'Datasets/enzymes/enzymes.list'
+                     },
+          'mutag': {'path': 'Datasets/mutag/',
+                      'labels': 'Datasets/mutag/mutag.label',
+                      'data': 'Datasets/mutag/mutag.list'
+                      },
+          'DD': {'path': 'Datasets/DD/',
+                      'labels': 'Datasets/DD/DD.label',
+                      'data': 'Datasets/DD/DD.list'
+                      }
+,
+          'NCI1': {'path': 'Datasets/NCI1/',
+                      'labels': 'Datasets/NCI1/NCI1.label',
+                      'data': 'Datasets/NCI1/NCI1.list'
+                      }
 
-dg_train=data_generator.DataGenerator(X_train,labels,data_dir)
-dg_test=data_generator.DataGenerator(X_test,labels,data_dir)
+          }
+
+enzymes='enzymes'
+mutag='mutag'
+DD='DD'
+NCI1='NCI1'
+
+
+
+
+
+
+
+curr_ds_name=mutag
+
+
+k=20
+width=5
+n_epochs=30
+test_percent=0.2
+data, labels=prepare_paths(Datasets[curr_ds_name])
+
+
+num_of_classes=len(set(labels.values()))
+rands = np.random.random(len(data))
+m=create_1Dcnn(k,width,num_of_classes)
+X_train=data[rands<=(1-test_percent)]
+X_test=data[rands>test_percent]
+
+
+dg_train=data_generator.DataGenerator(X_train,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k)
+dg_test=data_generator.DataGenerator(X_test,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k)
 data_test,labels_test=dg_test.getallitems()
-m.fit_generator(dg_train,epochs=50,verbose=2)
+m.fit_generator(dg_train,epochs=n_epochs,verbose=2)
 y_pred=m.predict_classes(data_test)
-acc=np.sum([i==j for i,j in zip(y_pred,labels_test)])/len(labels_test)
-print(acc)
+y_true=[ np.where(r==1)[0][0] for r in labels_test ]
+acc=np.sum([i==j for i,j in zip(y_pred,y_true)])/len(labels_test)
+print('The accuracy is : %.4f'%acc)
