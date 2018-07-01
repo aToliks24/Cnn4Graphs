@@ -53,7 +53,9 @@ def canonical_subgraph(G, nodes):
                 prev_l = nodes_lbls[v].copy()
                 rank += 1
             nodes_lbls[v][0] = str(rank).zfill(n_dig)
-    return list(nodes_lbls.keys()).reverse()
+    res=list(nodes_lbls.keys())
+    res.reverse()
+    return res
 
 
 def SelNodeSeq(Graph, canonization_func, stride, width, k):
@@ -134,11 +136,6 @@ def NormalizeGraph(Graph, U, canonization_func, k):
         sorted_layers.extend(['d'+str(i) for i in range(k-len(sorted_layers))])
     return sorted_layers[:k]
 
-
-def random_order_labeling(Graph, bfs_layer):
-    l = list(range(len(bfs_layer)))
-    np.random.shuffle(l)
-    return l
 
 
 '''
