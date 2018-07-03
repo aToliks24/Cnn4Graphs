@@ -71,7 +71,7 @@ class DataGenerator(keras.utils.Sequence):
             curr_path=self.data_dir + ID
             if os.path.exists(curr_path+ '_vertex.npz' ) and  self.type == 'vertex':
                 X_vertex_list.append(np.array(np.load(curr_path + '_vertex.npz')['arr_0']))
-            if os.path.exists(curr_path + '_edge.npz') and self.type == 'edge':
+            elif os.path.exists(curr_path + '_edge.npz') and self.type == 'edge':
                 X_edge_list.append(np.array(np.load(curr_path+'_edge.npz')['arr_0']))
             else:
                 g=nx.read_graphml(curr_path)
@@ -79,7 +79,7 @@ class DataGenerator(keras.utils.Sequence):
                 pp2 = None
                 if self.type=='vertex':
                     pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
-                    np.savez_compressed(curr_path,pp1)
+                    np.savez_compressed(curr_path+'_vertex',pp1)
                     X_vertex_list.append(np.array(pp1))
                 if self.type=='edge':
                     xmldoc = minidom.parse(curr_path)
@@ -94,17 +94,17 @@ class DataGenerator(keras.utils.Sequence):
                         lg.nodes.data()[(source, target)].update({'label':value})
                     [x[1].update({'value':0}) for x in lg.nodes.data() if len(x[1]) == 0]
                     pp2 = preprocess.SelNodeSeq(lg, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
-                    np.savez_compressed(curr_path, pp2)
+                    np.savez_compressed(curr_path+ '_edge', pp2)
                     X_edge_list.append(np.array(pp2))
             # Store class
             y.append(self.labels[ID])
         one_hot_y=keras.utils.to_categorical(y, num_classes=self.n_classes)
         if self.type=='vertex':
-            model_input = np.expand_dims(np.vstack(X_vertex_list), axis=2),one_hot_y
+            model_input = np.expand_dims(np.vstack(X_vertex_list), axis=2)
         elif self.type=='edge':
-            model_input=np.expand_dims(np.vstack(X_edge_list),axis=2),one_hot_y
+            model_input=np.expand_dims(np.vstack(X_edge_list),axis=2)
 
-        return model_input
+        return model_input,one_hot_y
 
 
 class two_input_generator_bilder(object):

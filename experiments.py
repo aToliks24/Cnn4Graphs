@@ -104,7 +104,7 @@ curr_ds_name=mutag
 k=10
 width=30
 n_epochs=5
-test_percent=0.1
+test_percent=0.15
 type='edge' #  'vertex' or 'edge' or 'comb'
 data, labels=prepare_paths(Datasets[curr_ds_name],overwrite=True)
 
@@ -113,8 +113,8 @@ num_of_classes=len(set(labels.values()))
 rands = np.random.random(len(data))
 m=create_1Dcnn(k,width,num_of_classes)
 #m=create_1DdoubleCnn(k,width,width,num_of_classes)
-X_train=data[rands<=(1-test_percent)]
-X_test=data[rands>test_percent]
+X_train=data[rands>test_percent]
+X_test=data[rands<=test_percent]
 
 
 dg_train=data_generator.DataGenerator(X_train,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k,type=type)
