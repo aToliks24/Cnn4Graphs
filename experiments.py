@@ -72,6 +72,21 @@ def create_1DdoubleCnn(k,w1,w2, num_of_classes):
     ModelAll.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
     return ModelAll
 
+def create_1DdoubleCnn2(k,w1,w2, num_of_classes):
+    I1=Input((k*w1,1),name='vertex_input')
+    C1=Conv1D(16, kernel_size=k, strides=w1, activation='relu',input_shape=(k*w1, 1))(I1)
+    I2 = Input((k * w2, 1),name='edge_input')
+    C2=Conv1D(16, kernel_size=k, strides=w2, activation='relu',input_shape=(k*w2, 1))(I2)
+    conc = Concatenate()([C1, C2])
+    C3=Conv1D(8, kernel_size=10, strides=1, activation='relu',padding='same')(conc)
+    F1=Flatten()(C3)
+    Dense1=Dense(128,activation='relu')(F1)
+    Drop1=Dropout(0.5)(Dense1)
+    SM=Dense(num_of_classes, activation='softmax')(Drop1)
+    ModelAll=Model([I1,I2],SM)
+    ModelAll.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    return ModelAll
+
 Datasets={'enzymes':{'path':'Datasets/enzymes/',
                     'labels':'Datasets/enzymes/enzymes.label',
                      'data':'Datasets/enzymes/enzymes.list'
@@ -103,24 +118,33 @@ NCI1='NCI1'
 curr_ds_name=mutag
 k=10
 width=30
+width1=30
+width2=30
 n_epochs=5
 test_percent=0.15
+batch_size=20
 type='edge' #  'vertex' or 'edge' or 'comb'
 data, labels=prepare_paths(Datasets[curr_ds_name],overwrite=True)
 
 
 num_of_classes=len(set(labels.values()))
 rands = np.random.random(len(data))
-m=create_1Dcnn(k,width,num_of_classes)
-#m=create_1DdoubleCnn(k,width,width,num_of_classes)
+#m=create_1Dcnn(k,width,num_of_classes)
+m=create_1DdoubleCnn2(k,width,width,num_of_classes)
+
 X_train=data[rands>test_percent]
 X_test=data[rands<=test_percent]
 
-
-dg_train=data_generator.DataGenerator(X_train,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k,type=type)
+dg_train1=data_generator.DataGenerator(X_train,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k,type='vertex',batch_size=batch_size)
+dg_train2=data_generator.DataGenerator(X_train,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k,type='edge',batch_size=batch_size)
 dg_test=data_generator.DataGenerator(X_test,labels,Datasets[curr_ds_name]['path'],len(set(labels.values())),width=width,k=k,type=type)
 data_test,labels_test=dg_test.getallitems()
-m.fit_generator(dg_train,epochs=n_epochs,verbose=2,validation_data=dg_test.getallitems(),callbacks=[TensorBoard('TensorBoardDir/')])
+
+m.fit_generator(data_generator.double_input_data_generator(X_train,labels,Datasets[curr_ds_name]['path'],width1,width2,k,batch_size),epochs=n_epochs,verbose=2,validation_data=dg_test.getallitems(),callbacks=[TensorBoard('TensorBoardDir/')],steps_per_epoch=int(np.ceil( len(X_train)/batch_size)))
+#m.fit_generator([dg_train1,dg_train2],epochs=n_epochs,verbose=2,validation_data=dg_test.getallitems(),callbacks=[TensorBoard('TensorBoardDir/')],steps_per_epoch=int(np.ceil( len(X_train)/batch_size)))
+#m.fit([dg_train1.getallitems(),dg_train2.getallitems()],epochs=n_epochs,verbose=2,validation_data=dg_test.getallitems(),callbacks=[TensorBoard('TensorBoardDir/')])
+#m.fit_generator([{ 'vertex_input' :dg_train1,'edge_input':dg_train2}],epochs=n_epochs,verbose=2,validation_data=dg_test.getallitems(),callbacks=[TensorBoard('TensorBoardDir/')],steps_per_epoch=int(np.ceil( len(X_train)/batch_size)))
+
 
 #y_pred=m.predict_classes(data_test)
 #y_true=[ np.where(r==1)[0][0] for r in labels_test ]

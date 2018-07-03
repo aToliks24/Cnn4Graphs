@@ -8,7 +8,7 @@ import time
 import matplotlib.pyplot as plt
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels,data_dir, n_classes,batch_size=32, width=20,stride=1,k=5, shuffle=True,type='vertex'):
+    def __init__(self, list_IDs, labels,data_dir, n_classes,batch_size=32, width=20,stride=1,k=5, shuffle=True,type='vertex',seed=7):
         'Initialization'
         self.type = type
         self.width=width
@@ -23,11 +23,9 @@ class DataGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.data_dir = data_dir
         self.on_epoch_end()
+        np.random.seed(seed)
         if type not in ['edge','vertex','comb']:
             raise ValueError('type should be in: [\'vertex\',\'edge\',\'comb\']')
-
-
-
 
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -107,5 +105,16 @@ class DataGenerator(keras.utils.Sequence):
         return model_input,one_hot_y
 
 
-class two_input_generator_bilder(object):
-    pass
+def double_input_data_generator(X_train,labels,data_path,width1,width2,k,batch_size):
+    gen1 = DataGenerator(X_train, labels, data_path, len(set(labels.values())),width=width1, k=k, type='vertex', batch_size=batch_size,seed=7)
+    gen2 = DataGenerator(X_train, labels, data_path, len(set(labels.values())),width=width2, k=k, type='edge', batch_size=batch_size,seed=7)
+    index=-1
+    while True:
+        index+=1
+        index%=len(X_train)
+        X1, y1=gen1.__getitem__(index)
+        gen1.on_epoch_end()
+        X2, y2=gen2.__getitem__(index)
+        gen2.on_epoch_end()
+        yield {'vertex_input':X1,'edge_input':X2},y1
+        time.sleep(1)
