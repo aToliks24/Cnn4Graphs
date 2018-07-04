@@ -73,24 +73,12 @@ class DataGenerator(keras.utils.Sequence):
                 X_edge_list.append(np.array(np.load(curr_path+'_edge.npz')['arr_0']))
             else:
                 g=nx.read_graphml(curr_path)
-                pp1=None
-                pp2 = None
-                if self.type=='vertex':
+                if self.type=='vertex' or self.type=='comb':
                     pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
                     np.savez_compressed(curr_path+'_vertex',pp1)
                     X_vertex_list.append(np.array(pp1))
-                if self.type=='edge':
-                    xmldoc = minidom.parse(curr_path)
-                    itemlist = xmldoc.getElementsByTagName('edge')
-                    lg = nx.line_graph(g)
-                    for item in itemlist:
-                        value=float(item.firstChild.TEXT_NODE)
-                        source=item.attributes['source'].value
-                        target=item.attributes['target'].value
-                        if (source, target) not in lg.nodes.data():
-                            lg.add_node((source, target))
-                        lg.nodes.data()[(source, target)].update({'label':value})
-                    [x[1].update({'value':0}) for x in lg.nodes.data() if len(x[1]) == 0]
+                if self.type=='edge' or self.type=='comb':
+                    lg = self.vertexes_to_edges_graph(curr_path, g)
                     pp2 = preprocess.SelNodeSeq(lg, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
                     np.savez_compressed(curr_path+ '_edge', pp2)
                     X_edge_list.append(np.array(pp2))
@@ -101,20 +89,21 @@ class DataGenerator(keras.utils.Sequence):
             model_input = np.expand_dims(np.vstack(X_vertex_list), axis=2)
         elif self.type=='edge':
             model_input=np.expand_dims(np.vstack(X_edge_list),axis=2)
+        elif self.type=='comb':
+            model_input={'vertex_input':np.expand_dims(np.vstack(X_vertex_list), axis=2),'edge_input':np.expand_dims(np.vstack(X_edge_list),axis=2)}
 
         return model_input,one_hot_y
 
-
-def double_input_data_generator(X_train,labels,data_path,width1,width2,k,batch_size):
-    gen1 = DataGenerator(X_train, labels, data_path, len(set(labels.values())),width=width1, k=k, type='vertex', batch_size=batch_size,seed=7)
-    gen2 = DataGenerator(X_train, labels, data_path, len(set(labels.values())),width=width2, k=k, type='edge', batch_size=batch_size,seed=7)
-    index=-1
-    while True:
-        index+=1
-        index%=len(X_train)
-        X1, y1=gen1.__getitem__(index)
-        gen1.on_epoch_end()
-        X2, y2=gen2.__getitem__(index)
-        gen2.on_epoch_end()
-        yield {'vertex_input':X1,'edge_input':X2},y1
-        time.sleep(1)
+    def vertexes_to_edges_graph(self, curr_path, v_graph):
+        xmldoc = minidom.parse(curr_path)
+        itemlist = xmldoc.getElementsByTagName('edge')
+        e_graph = nx.line_graph(v_graph)
+        for item in itemlist:
+            value = float(item.firstChild.TEXT_NODE)
+            source = item.attributes['source'].value
+            target = item.attributes['target'].value
+            if (source, target) not in e_graph.nodes.data():
+                e_graph.add_node((source, target))
+            e_graph.nodes.data()[(source, target)].update({'label': value})
+        [x[1].update({'value': 0}) for x in e_graph.nodes.data() if len(x[1]) == 0]
+        return e_graph
