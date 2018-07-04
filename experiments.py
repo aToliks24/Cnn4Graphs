@@ -23,7 +23,7 @@ def create_2Dcnn(k,width, num_of_classes,stride):  # doesn't work
 
 
 
-def prepare_paths(dataset_dict,overwrite=True):
+def prepare_paths(dataset_dict,overwrite=False):
     data_dir = dataset_dict['path']
     f_data = dataset_dict['data']
     f_labels = dataset_dict['labels']
@@ -45,6 +45,7 @@ def prepare_paths(dataset_dict,overwrite=True):
     return data, labels
 
 def create_1Dcnn(k,width, num_of_classes):
+    # Todo:input_shape as n_channels instead of length
     model = Sequential()
     model.add(Conv1D(16, kernel_size=k, strides=width, activation='relu',input_shape=(k*width, 1)))
     model.add(Conv1D(8, kernel_size=10, strides=1, activation='relu',padding='same'))
@@ -111,19 +112,19 @@ enzymes='enzymes'
 mutag='mutag'
 DD='DD'
 NCI1='NCI1'
-
+#todo: search for datasets: Protein, PCT, social network graphs in ".graphml" format
 
 
 
 curr_ds_name=mutag
-k=10
+k=5
 width=30
 width1=30
 width2=30
 n_epochs=100
 test_percent=0.2
 batch_size=20
-type='comb' #  'vertex' or 'edge' or 'comb'
+type='vertex' #  'vertex' or 'edge' or 'comb' or 'vertex_channels'
 data, labels=prepare_paths(Datasets[curr_ds_name],overwrite=False)
 
 

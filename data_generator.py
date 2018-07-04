@@ -10,6 +10,7 @@ class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, labels,data_dir, n_classes,batch_size=32, width=20,stride=1,k=5, shuffle=True,type='vertex',seed=7):
         'Initialization'
+        #todo: support multiple width for combined
         self.type = type
         self.width=width
         self.stride=stride
@@ -24,7 +25,7 @@ class DataGenerator(keras.utils.Sequence):
         self.data_dir = data_dir
         self.on_epoch_end()
         np.random.seed(seed)
-        if type not in ['edge','vertex','comb']:
+        if type not in ['edge','vertex','comb','vertex_channels']:
             raise ValueError('type should be in: [\'vertex\',\'edge\',\'comb\']')
 
     def __len__(self):
@@ -60,6 +61,7 @@ class DataGenerator(keras.utils.Sequence):
         # Initialization
         X_vertex_list=[]
         X_edge_list = []
+        X_vertex_channel_list=[]
         model_input=[]
         y = []
 
@@ -74,6 +76,7 @@ class DataGenerator(keras.utils.Sequence):
             else:
                 g=nx.read_graphml(curr_path)
                 if self.type=='vertex' or self.type=='comb' or self.type == 'vertex_channels':
+                    # Todo: savez_compress for each pp using different filename
                     pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
                     np.savez_compressed(curr_path+'_vertex',pp1)
                     X_vertex_list.append(np.array(pp1))
@@ -90,8 +93,11 @@ class DataGenerator(keras.utils.Sequence):
                     nx.set_node_attributes(g, ds, 'label')
                     pp1_3 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
 
-                    np.savez_compressed(curr_path + '_vertex', pp1)
-                    X_vertex_list.append(np.array(pp1))
+
+                    voodoo_python= [np.array(x) for x in [ pp1,pp1_1,pp1_2,pp1_3]]
+                    X_vertex_channel_list.append(np.stack(voodoo_python,axis=1))
+
+
 
                 if self.type=='edge' or self.type=='comb':
                     lg = self.vertexes_to_edges_graph(curr_path, g)
@@ -107,7 +113,8 @@ class DataGenerator(keras.utils.Sequence):
             model_input=np.expand_dims(np.vstack(X_edge_list),axis=2)
         elif self.type=='comb':
             model_input={'vertex_input':np.expand_dims(np.vstack(X_vertex_list), axis=2),'edge_input':np.expand_dims(np.vstack(X_edge_list),axis=2)}
-
+        elif self.type=='vertex_channels':
+            model_input=np.asanyarray(X_vertex_channel_list)
         return model_input,one_hot_y
 
     def vertexes_to_edges_graph(self, curr_path, v_graph):
