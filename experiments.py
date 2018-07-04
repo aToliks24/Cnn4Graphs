@@ -4,7 +4,7 @@ from keras.callbacks import TensorBoard
 import preprocess
 import data_generator
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import os
 np.random.seed(7)
