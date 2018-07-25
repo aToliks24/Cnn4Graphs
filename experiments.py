@@ -145,7 +145,7 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
     dg_test=data_generator.DataGenerator(X_test, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
                                          mode=mode)
 
-    m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard('TensorBoardDir/')],validation_data=dg_test.getallitems(),workers=1)
+    m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard('TB_Dataset-{}_k-{}_Width-{}_Mode-{}'.format(ds_name,k,'_'.join([str(w) for w in width]),mode))],validation_data=dg_test.getallitems(),workers=1)
 
 
 
@@ -154,10 +154,10 @@ dataset_names=['mutag','DD','enzymes','NCI1']
 modes=['vertex','edge','comb','vertex_channels']
 
 dataset=dataset_names[0]    #choose dataset frome dataset-list
-mode=modes[2]               #choose mode frome mode-list
+mode=modes[0]               #choose mode frome mode-list
 width=None                  #None for default recommended values,
                             #for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
-k=10                        #common values: 5,10
+k=5                        #common values: 5,10
 
 
 
