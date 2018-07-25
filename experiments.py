@@ -151,15 +151,17 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
 
 
 dataset_names=['mutag','DD','enzymes','NCI1']
-modes=['vertex','edge','comb','vertex_features']
+modes=['vertex','edge','comb','vertex_channels']
 
-dataset=dataset_names[3]    #choose dataset frome dataset-list
+dataset=dataset_names[0]    #choose dataset frome dataset-list
 mode=modes[0]               #choose mode frome mode-list
 width=None                  #None for default recommended values,
                             #for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
 k=5                         #common values: 5,10
 
-m=train_test(ds_name=dataset, k=k, mode=mode, n_epochs=10, test_percent=0.2, batch_size=20)
+
+
+train_test(ds_name=dataset, k=k, mode=mode, n_epochs=100, test_percent=0.2, batch_size=20)
 
 
 #y_pred=m.predict_classes(data_test)
