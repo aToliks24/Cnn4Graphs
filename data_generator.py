@@ -8,14 +8,17 @@ import time
 # import matplotlib.pyplot as plt
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels,data_dir, n_classes,batch_size=32, width=20,stride=1,k=5, shuffle=True,type='vertex',seed=7):
+    def __init__(self, list_IDs, labels, data_dir, n_classes, batch_size=32, width=20, stride=1, k=5, shuffle=True, mode='vertex', seed=7):
         'Initialization'
         #todo: support multiple width for combined
-        self.type = type
+        self.mode = mode
         self.width=width
         self.stride=stride
         self.k=k
-        self.dim = (k*width,1)
+        channels = 1
+        if mode=='vertex_channels':
+            channels=4
+        self.dim = (k*sum(width),channels)
         self.batch_size = batch_size
         self.labels = labels
         self.list_IDs = list_IDs
@@ -25,8 +28,8 @@ class DataGenerator(keras.utils.Sequence):
         self.data_dir = data_dir
         self.on_epoch_end()
         np.random.seed(seed)
-        if type not in ['edge','vertex','comb','vertex_channels']:
-            raise ValueError('type should be in: [\'vertex\',\'edge\',\'comb\']')
+        if mode not in ['edge', 'vertex', 'comb', 'vertex_channels']:
+            raise ValueError('mode should be in: [\'vertex\',\'edge\',\'comb\' \'vertex_channels\']')
 
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -69,51 +72,55 @@ class DataGenerator(keras.utils.Sequence):
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
             curr_path=self.data_dir + ID
-            if os.path.exists(curr_path+ '_vertex.npz' ) and  self.type == 'vertex':
+            if os.path.exists(curr_path+ '_vertex.npz' ) and  self.mode == 'vertex':
                 X_vertex_list.append(np.array(np.load(curr_path + '_vertex.npz')['arr_0']))
-            elif os.path.exists(curr_path + '_edge.npz') and self.type == 'edge':
+            elif os.path.exists(curr_path + '_edge.npz') and self.mode == 'edge':
                 X_edge_list.append(np.array(np.load(curr_path+'_edge.npz')['arr_0']))
             else:
-                g=nx.read_graphml(curr_path)
-                if self.type=='vertex' or self.type=='comb' or self.type == 'vertex_channels':
-                    # Todo: savez_compress for each pp using different filename
-                    pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
+                if self.mode=='edge':
+                    edge_width = self.width[0]
+                elif self.mode in ['vertex','vertex_channels']:
+                    vertex_width = self.width[0]
+                else:
+                    vertex_width = self.width[0]
+                    edge_width = self.width[1]
+                if self.mode in ['vertex','vertex_channels','comb']:
+                    g = nx.read_graphml(curr_path)
+                    pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
                     np.savez_compressed(curr_path+'_vertex',pp1)
                     X_vertex_list.append(np.array(pp1))
-                if self.type == 'vertex_channels':
-                    cs = nx.closeness_centrality(g)
-                    nx.set_node_attributes(g, cs, 'label')
-                    pp1_1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
+                    if self.mode == 'vertex_channels':
+                        cs = nx.closeness_centrality(g)
+                        nx.set_node_attributes(g, cs, 'label')
+                        pp1_1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
 
-                    bs = nx.betweenness_centrality(g)
-                    nx.set_node_attributes(g, bs, 'label')
-                    pp1_2 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
+                        bs = nx.betweenness_centrality(g)
+                        nx.set_node_attributes(g, bs, 'label')
+                        pp1_2 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
 
-                    ds = nx.degree_centrality(g)
-                    nx.set_node_attributes(g, ds, 'label')
-                    pp1_3 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
-
-
-                    voodoo_python= [np.array(x) for x in [ pp1,pp1_1,pp1_2,pp1_3]]
-                    X_vertex_channel_list.append(np.stack(voodoo_python,axis=1))
+                        ds = nx.degree_centrality(g)
+                        nx.set_node_attributes(g, ds, 'label')
+                        pp1_3 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
 
 
-
-                if self.type=='edge' or self.type=='comb':
+                        voodoo_python= [np.array(x) for x in [ pp1,pp1_1,pp1_2,pp1_3]]
+                        X_vertex_channel_list.append(np.stack(voodoo_python,axis=1))
+                if self.mode== 'edge' or self.mode== 'comb':
+                    g = nx.read_graphml(curr_path)
                     lg = self.vertexes_to_edges_graph(curr_path, g)
-                    pp2 = preprocess.SelNodeSeq(lg, preprocess.canonical_subgraph, stride=self.stride, width=self.width,k=self.k)
+                    pp2 = preprocess.SelNodeSeq(lg, preprocess.canonical_subgraph, stride=self.stride, width=edge_width,k=self.k)
                     np.savez_compressed(curr_path+ '_edge', pp2)
                     X_edge_list.append(np.array(pp2))
             # Store class
             y.append(self.labels[ID])
         one_hot_y=keras.utils.to_categorical(y, num_classes=self.n_classes)
-        if self.type=='vertex':
+        if self.mode== 'vertex':
             model_input = np.expand_dims(np.vstack(X_vertex_list), axis=2)
-        elif self.type=='edge':
+        elif self.mode== 'edge':
             model_input=np.expand_dims(np.vstack(X_edge_list),axis=2)
-        elif self.type=='comb':
+        elif self.mode== 'comb':
             model_input={'vertex_input':np.expand_dims(np.vstack(X_vertex_list), axis=2),'edge_input':np.expand_dims(np.vstack(X_edge_list),axis=2)}
-        elif self.type=='vertex_channels':
+        elif self.mode== 'vertex_channels':
             model_input=np.asanyarray(X_vertex_channel_list)
         return model_input,one_hot_y
 
