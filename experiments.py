@@ -78,7 +78,7 @@ def plot_graph(dirname, ds_name,g1_name,g2_name,suptitle, h, k, mode, n_epochs, 
     fig = plt.figure()
     txt = '''
     Mode: \'{}\' , K={},  Width=({}), Test {} = {}
-    '''.format(mode, k, ','.join([str(w) for w in width]),suptitle,test_value)
+    '''.format(mode, k, ','.join([str(w) for w in width]),suptitle,'%.3f'%test_value)
     fig.text(.1, .1, txt)
     fig.suptitle('Dataset \'{}\' {}'.format(ds_name,suptitle))
     ax1 = fig.add_axes((.1, .25, .8, .65))
@@ -182,13 +182,9 @@ dataset=dataset_names[0]    #choose dataset frome dataset-list
 mode=modes[0]               #choose mode frome mode-list
 width=None                  #None for default recommended values,
                             #for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
-k=5                        #common values: 5,10
+k=10                        #common values: 5,10
+
 
 
 train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
 
-
-#y_pred=m.predict_classes(data_test)
-#y_true=[ np.where(r==1)[0][0] for r in labels_test ]
-#acc=np.sum([i==j for i,j in zip(y_pred,y_true)])/len(labels_test)
-#print('The accuracy is : %.4f'%acc)
