@@ -1,6 +1,6 @@
 from keras.models import Sequential,Model
 from keras.layers import Conv1D,Flatten,Dense,Dropout,Input,Concatenate
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard,EarlyStopping
 import data_generator
 import numpy as np
 import os
@@ -74,17 +74,18 @@ def get_recommended_width(name, datasets_path):
     v_avr = int(v_sum / count)
     return {'E': e_avr, 'V': v_avr}
 
-def plot_graph(dirname, ds_name,g1_name,g2_name,suptitle, h, k, mode, n_epochs, savefig, showfig, width):
+def plot_graph(dirname, ds_name,g1_name,g2_name,suptitle, h, k, mode, n_epochs, savefig, showfig, width,test_value):
     fig = plt.figure()
     txt = '''
-    Mode: \'{}\' K={} Width=({})
-    '''.format(mode, k, ','.join([str(w) for w in width]))
+    Mode: \'{}\' , K={},  Width=({}), Test {} = {}
+    '''.format(mode, k, ','.join([str(w) for w in width]),suptitle,test_value)
     fig.text(.1, .1, txt)
     fig.suptitle('Dataset \'{}\' {}'.format(ds_name,suptitle))
     ax1 = fig.add_axes((.1, .25, .8, .65))
     ax1.set_xlabel('Epochs')
-    ax1.plot(list(range(n_epochs)), h.history[g1_name], linestyle=':', label='Test')
+    ax1.plot(list(range(n_epochs)), h.history[g1_name], linestyle=':', label='Validation')
     ax1.plot(list(range(n_epochs)), h.history[g2_name], linestyle='--', label='Train')
+    ax1.plot(list(range(n_epochs)),[test_value]*n_epochs, linestyle='-.', label='Test Result')
     plt.legend(loc='best')
     if savefig:
         plt.savefig(dirname + '/{}.pdf'.format(suptitle))
@@ -119,10 +120,10 @@ Datasets_dict={
 
 
 
-def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, test_percent=0.2, batch_size=20,savefig=False,showfig=True):
+def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, test_percent=0.20,val_percent=0.10, batch_size=20,savefig=False,showfig=True):
     data, labels=prepare_paths(Datasets_dict[ds_name], overwrite=True)
     num_of_classes=len(set(labels.values()))
-    rands = np.random.random(len(data))
+    rands1 = np.random.random(len(data))
     if type(width) == int or type(width) == tuple and len(width)==1:
         wv=width
         we=width
@@ -148,19 +149,27 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
         width=(wv,)
     else:
         raise Exception("'mode' parameter should be in ['vertex','edge','comb','vertex_channels'] ")
-    X_train=data[rands>test_percent]
-    X_test=data[rands<=test_percent]
+    X_train_ids=data[rands1 > test_percent]
+    X_test_ids = data[rands1 <= test_percent]
+    rands2 = np.random.random(len(X_train_ids))
+    X_val_ids=X_train_ids[rands2<= val_percent]
+    X_train_ids=X_train_ids[rands2 > val_percent]
 
-    dg_train=data_generator.DataGenerator(X_train, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
+
+    dg_train=data_generator.DataGenerator(X_train_ids, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
                                           mode=mode, batch_size=batch_size)
-    dg_test=data_generator.DataGenerator(X_test, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
+    dg_test=data_generator.DataGenerator(X_test_ids, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
+                                         mode=mode)
+    dg_val=data_generator.DataGenerator(X_val_ids, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
                                          mode=mode)
     dirname='TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name,mode,k,'_'.join([str(w) for w in width]))
-    h= m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard(dirname)],validation_data=dg_test.getallitems(),workers=1)
+    h= m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard(dirname),EarlyStopping(patience=10,monitor='val_acc')],validation_data=dg_val.getallitems(),workers=1)
+    X_test,y_test=dg_test.getallitems()
+    ev=m.evaluate(X_test,y_test)
     with open(dirname+'/history.json', 'w') as file:
         file.write(json.dumps(h.history))
-    plot_graph(dirname, ds_name,'val_acc','acc','Accuracy', h, k, mode, n_epochs, savefig, showfig, width)
-    plot_graph(dirname, ds_name,'val_loss','loss','Loss', h, k, mode, n_epochs, savefig, showfig, width)
+    plot_graph(dirname, ds_name,'val_acc','acc','Accuracy', h, k, mode, len(h.epoch), savefig, showfig, width,ev[1])
+    plot_graph(dirname, ds_name,'val_loss','loss','Loss', h, k, mode, len(h.epoch), savefig, showfig, width,ev[0])
 
 
 
@@ -176,9 +185,9 @@ width=None                  #None for default recommended values,
 k=5                        #common values: 5,10
 
 
-
-train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
-
+for m in modes:
+    train_test(ds_name=dataset, k=k, mode=m,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
+    break
 
 
 #y_pred=m.predict_classes(data_test)
