@@ -109,12 +109,17 @@ Datasets_dict={
                       'data': 'Datasets/DD/DD.list'
 
                       }
-,
+            ,
           'NCI1': {'path': 'Datasets/NCI1/',
                       'labels': 'Datasets/NCI1/NCI1.label',
                       'data': 'Datasets/NCI1/NCI1.list',
 
-                      }
+                      },
+    'collab': {'path': 'Datasets/collab/',
+             'labels': 'Datasets/collab/collab.label',
+             'data': 'Datasets/collab/collab.list',
+
+             }
 
           }
 
@@ -175,10 +180,10 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
 
 
 
-dataset_names=['mutag','DD','enzymes','NCI1']
+dataset_names=['mutag','DD','enzymes','NCI1', 'collab']
 modes=['vertex','edge','comb','vertex_channels']
 
-dataset=dataset_names[0]    #choose dataset frome dataset-list
+dataset=dataset_names[4]    #choose dataset frome dataset-list
 mode=modes[0]               #choose mode frome mode-list
 width=None                  #None for default recommended values,
                             #for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
