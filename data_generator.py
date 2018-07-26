@@ -72,10 +72,15 @@ class DataGenerator(keras.utils.Sequence):
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
             curr_path=self.data_dir + ID
-            if os.path.exists(curr_path+ '_vertex.npz' ) and  self.mode == 'vertex':
+            if self.mode == 'vertex' and os.path.exists(curr_path+ '_vertex.npz' ) :
                 X_vertex_list.append(np.array(np.load(curr_path + '_vertex.npz')['arr_0']))
-            elif os.path.exists(curr_path + '_edge.npz') and self.mode == 'edge':
+            elif self.mode == 'edge' and os.path.exists(curr_path + '_edge.npz')   :
                 X_edge_list.append(np.array(np.load(curr_path+'_edge.npz')['arr_0']))
+            elif self.mode == 'comb'  and os.path.exists(curr_path + '_edge.npz')and os.path.exists(curr_path+ '_vertex.npz' )  :
+                X_vertex_list.append(np.array(np.load(curr_path + '_vertex.npz')['arr_0']))
+                X_edge_list.append(np.array(np.load(curr_path+'_edge.npz')['arr_0']))
+            elif os.path.exists(curr_path + '_vc.npz') and self.mode == 'vertex_channels':
+                X_vertex_channel_list.append(np.array(np.load(curr_path + '_vc.npz')['arr_0']))
             else:
                 if self.mode=='edge':
                     edge_width = self.width[0]
@@ -87,9 +92,10 @@ class DataGenerator(keras.utils.Sequence):
                 if self.mode in ['vertex','vertex_channels','comb']:
                     g = nx.read_graphml(curr_path)
                     pp1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
-                    np.savez_compressed(curr_path+'_vertex',pp1)
-                    X_vertex_list.append(np.array(pp1))
-                    if self.mode == 'vertex_channels':
+                    if not self.mode == 'vertex_channels':
+                        X_vertex_list.append(np.array(pp1))
+                        np.savez_compressed(curr_path + '_vertex', pp1)
+                    else:
                         cs = nx.closeness_centrality(g)
                         nx.set_node_attributes(g, cs, 'label')
                         pp1_1 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
@@ -102,15 +108,18 @@ class DataGenerator(keras.utils.Sequence):
                         nx.set_node_attributes(g, ds, 'label')
                         pp1_3 = preprocess.SelNodeSeq(g, preprocess.canonical_subgraph, stride=self.stride, width=vertex_width,k=self.k)
 
-
                         voodoo_python= [np.array(x) for x in [ pp1,pp1_1,pp1_2,pp1_3]]
-                        X_vertex_channel_list.append(np.stack(voodoo_python,axis=1))
+                        vc_arr=np.stack(voodoo_python,axis=1)
+                        np.savez_compressed(curr_path + '_vc', vc_arr)
+                        X_vertex_channel_list.append(vc_arr)
                 if self.mode== 'edge' or self.mode== 'comb':
                     g = nx.read_graphml(curr_path)
                     lg = self.vertexes_to_edges_graph(curr_path, g)
                     pp2 = preprocess.SelNodeSeq(lg, preprocess.canonical_subgraph, stride=self.stride, width=edge_width,k=self.k)
                     np.savez_compressed(curr_path+ '_edge', pp2)
                     X_edge_list.append(np.array(pp2))
+
+
             # Store class
             y.append(self.labels[ID])
         one_hot_y=keras.utils.to_categorical(y, num_classes=self.n_classes)
