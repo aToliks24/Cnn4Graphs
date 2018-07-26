@@ -77,11 +77,12 @@ def get_recommended_width(name, datasets_path):
 def plot_graph(dirname, ds_name,g1_name,g2_name,suptitle, h, k, mode, n_epochs, savefig, showfig, width):
     fig = plt.figure()
     txt = '''
-    Dataset: \'{}\' Mode: \'{}\' K={} Width=({})
-    '''.format(ds_name, mode, k, ','.join([str(w) for w in width]))
+    Mode: \'{}\' K={} Width=({})
+    '''.format(mode, k, ','.join([str(w) for w in width]))
     fig.text(.1, .1, txt)
-    fig.suptitle(suptitle)
+    fig.suptitle('Dataset \'{}\' {}'.format(ds_name,suptitle))
     ax1 = fig.add_axes((.1, .25, .8, .65))
+    ax1.set_xlabel('Epochs')
     ax1.plot(list(range(n_epochs)), h.history[g1_name], linestyle=':', label='Test')
     ax1.plot(list(range(n_epochs)), h.history[g2_name], linestyle='--', label='Train')
     plt.legend(loc='best')
