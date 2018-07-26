@@ -4,6 +4,7 @@ from keras.callbacks import TensorBoard
 import data_generator
 import numpy as np
 import os
+import json
 np.random.seed(7)
 import networkx as nx
 
@@ -144,9 +145,10 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
                                           mode=mode, batch_size=batch_size)
     dg_test=data_generator.DataGenerator(X_test, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())), width=width, k=k,
                                          mode=mode)
-
-    m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard('TB_Dataset-{}_k-{}_Width-{}_Mode-{}'.format(ds_name,k,'_'.join([str(w) for w in width]),mode))],validation_data=dg_test.getallitems(),workers=1)
-
+    dirname='TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name,mode,k,'_'.join([str(w) for w in width]))
+    h= m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard(dirname)],validation_data=dg_test.getallitems(),workers=1)
+    with open(dirname+'/history.txt', 'w') as file:
+        file.write(json.dumps(h.history))
 
 
 
@@ -161,7 +163,7 @@ k=5                        #common values: 5,10
 
 
 
-train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=100, test_percent=0.2, batch_size=20)
+train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20)
 
 
 #y_pred=m.predict_classes(data_test)
