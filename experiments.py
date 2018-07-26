@@ -185,9 +185,7 @@ width=None                  #None for default recommended values,
 k=5                        #common values: 5,10
 
 
-for m in modes:
-    train_test(ds_name=dataset, k=k, mode=m,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
-    break
+train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
 
 
 #y_pred=m.predict_classes(data_test)
