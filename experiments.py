@@ -7,6 +7,7 @@ import os
 import json
 np.random.seed(7)
 import networkx as nx
+import matplotlib.pyplot as plt
 
 def prepare_paths(dataset_dict,overwrite=False):
     data_dir = dataset_dict['path']
@@ -73,6 +74,22 @@ def get_recommended_width(name, datasets_path):
     v_avr = int(v_sum / count)
     return {'E': e_avr, 'V': v_avr}
 
+def plot_graph(dirname, ds_name,g1_name,g2_name,suptitle, h, k, mode, n_epochs, savefig, showfig, width):
+    fig = plt.figure()
+    txt = '''
+    Dataset: \'{}\' Mode: \'{}\' K={} Width=({})
+    '''.format(ds_name, mode, k, ','.join([str(w) for w in width]))
+    fig.text(.1, .1, txt)
+    fig.suptitle(suptitle)
+    ax1 = fig.add_axes((.1, .25, .8, .65))
+    ax1.plot(list(range(n_epochs)), h.history[g1_name], linestyle=':', label='Test')
+    ax1.plot(list(range(n_epochs)), h.history[g2_name], linestyle='--', label='Train')
+    plt.legend(loc='best')
+    if savefig:
+        plt.savefig(dirname + '/{}.pdf'.format(suptitle))
+    if showfig:
+        plt.show()
+    plt.clf()
 
 Datasets_dict={
           'enzymes':{'path':'Datasets/enzymes/',
@@ -101,15 +118,7 @@ Datasets_dict={
 
 
 
-
-
-
-
-
-#todo: search for datasets: Protein, PCT, social network graphs in ".graphml" format
-
-
-def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, test_percent=0.2, batch_size=20):
+def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, test_percent=0.2, batch_size=20,savefig=False,showfig=True):
     data, labels=prepare_paths(Datasets_dict[ds_name], overwrite=True)
     num_of_classes=len(set(labels.values()))
     rands = np.random.random(len(data))
@@ -147,8 +156,12 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
                                          mode=mode)
     dirname='TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name,mode,k,'_'.join([str(w) for w in width]))
     h= m.fit_generator(dg_train,epochs=n_epochs,verbose=2,callbacks=[TensorBoard(dirname)],validation_data=dg_test.getallitems(),workers=1)
-    with open(dirname+'/history.txt', 'w') as file:
+    with open(dirname+'/history.json', 'w') as file:
         file.write(json.dumps(h.history))
+    plot_graph(dirname, ds_name,'val_acc','acc','Accuracy', h, k, mode, n_epochs, savefig, showfig, width)
+    plot_graph(dirname, ds_name,'val_loss','loss','Loss', h, k, mode, n_epochs, savefig, showfig, width)
+
+
 
 
 
@@ -163,7 +176,8 @@ k=5                        #common values: 5,10
 
 
 
-train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20)
+train_test(ds_name=dataset, k=k, mode=mode,width=width ,n_epochs=50, test_percent=0.2, batch_size=20,savefig=True,showfig=False)
+
 
 
 #y_pred=m.predict_classes(data_test)
