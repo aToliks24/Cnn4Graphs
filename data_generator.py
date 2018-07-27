@@ -8,21 +8,35 @@ import time
 # import matplotlib.pyplot as plt
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels, data_dir, n_classes, batch_size=32, width=20, stride=1, k=5, shuffle=True, mode='vertex', seed=7):
-        'Initialization'
-        #todo: support multiple width for combined
+    def __init__(self, list_IDs, labels, data_dir, n_classes, batch_size=32, W=20, stride=1, k=5, shuffle=True, mode='vertex', seed=7):
+        """
+        Description:
+        Initializes a keras.utils.Sequence compatible generator for graph classification.
+        input:
+        list_IDs - list of paths of graphml dataset files.
+        labels - labels corresponding to the list_IDs files.
+        data_dir - the directory contains the dataset.
+        n_classes - number of classes.
+        batch_size - batch size.
+        W - size of receptive field , the number of relative graph vertexes inputs into one kernel cnn kernel.
+        stride - stride parameter for the Patchy-San algorithm.
+        K - number of receptive fields inputs to the model size of W each one.
+        shuffle - parameter controls whether to shuffle the batch bbedore feeding the classifier.
+        mode - the type of features fed to the classifier. should be in ['vertex','edge','comb','vertex_channels'].
+        seed - seed number for reproduction experiments.
+        """
         self.mode = mode
-        self.width=width
+        self.width=W
         self.stride=stride
         self.k=k
         channels = 1
         if mode=='vertex_channels':
             channels=4
-        self.dim = (k*sum(width),channels)
+        self.dim = (k * sum(W), channels)
         self.batch_size = batch_size
         self.labels = labels
         self.list_IDs = list_IDs
-        self.n_channels = width
+        self.n_channels = W
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.data_dir = data_dir
@@ -32,12 +46,25 @@ class DataGenerator(keras.utils.Sequence):
             raise ValueError('mode should be in: [\'vertex\',\'edge\',\'comb\' \'vertex_channels\']')
 
     def __len__(self):
-        'Denotes the number of batches per epoch'
+        """
+        Description:
+        Denotes the number of batches per epoch
+        Output:
+        Number of train examples per epoch.
+        """
+
         return int(np.floor(len(self.list_IDs) / self.batch_size))
 
     def __getitem__(self, index):
-        'Generate one batch of data'
-        # Generate indexes of the batch
+        """
+        Description:
+        Generates one batch of data by index
+        Input:
+        index - index of the batch.
+        Output:
+        X - the data features of the batch.
+        y - the labels of the batch.
+        """
         indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
 
         # Find list of IDs
@@ -49,19 +76,34 @@ class DataGenerator(keras.utils.Sequence):
         return X, y
 
     def getallitems(self):
+        """
+        Description:
+        Gets a whole dataset data
+        Output:
+        X - the data features of the dataset.
+        y - the labels of the dataset.
+        """
         X, y = self.__data_generation(self.list_IDs)
         return X,y
 
     def on_epoch_end(self):
-        'Updates indexes after each epoch'
+        """
+        Description:
+        Shuffles and updates indexes after each epoch
+        """
         self.indexes = np.arange(len(self.list_IDs))
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
         time.sleep(0.5)
 
     def __data_generation(self, list_IDs_temp):
-        'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
-        # Initialization
+        """
+        Description:
+        Generates data of the batch to feed the classifier
+        Output:
+        X - the data features of the dataset.
+        y - the labels of the dataset.
+        """
         X_vertex_list=[]
         X_edge_list = []
         X_vertex_channel_list=[]
@@ -134,6 +176,15 @@ class DataGenerator(keras.utils.Sequence):
         return model_input,one_hot_y
 
     def vertexes_to_edges_graph(self, curr_path, v_graph):
+        """
+        Description:
+        Converts vertex to edges in a graph.
+        Input:
+        curr_path - path of a current graphml file
+        v_graph - the vertex graph
+        Output:
+        e_graph - edges graph.
+        """
         xmldoc = minidom.parse(curr_path)
         itemlist = xmldoc.getElementsByTagName('edge')
         e_graph = nx.line_graph(v_graph)
