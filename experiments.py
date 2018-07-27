@@ -14,6 +14,16 @@ dropout_val = 0  # 0.5
 
 
 def prepare_paths(dataset_dict, overwrite=False):
+    """
+    Description:
+    Retrieves the paths of the files using the IDs file.
+    input:
+    dataset_dict – the dictionary holds the path of dataset, the IDs file and the Labels file.
+    overwrite – this parameter controls whether delete the temporary cached files by generator or not.
+    Output:
+    data - list of paths of the dataset files
+    labels - labels coresponding to the paths file
+    """
     data_dir = dataset_dict['path']
     f_data = dataset_dict['data']
     f_labels = dataset_dict['labels']
@@ -35,9 +45,20 @@ def prepare_paths(dataset_dict, overwrite=False):
     return data, labels
 
 
-def create_1Dcnn(k, width, num_of_classes, n_channels=1):
+def create_1Dcnn(K, W, num_of_classes, n_channels=1):
+    """
+    Description:
+    Creation of 1D CNN model with one input for the graph classification
+    input:
+    W - size of receptive field , the number of relative graph vertexes inputs into one kernel cnn kernel.
+    K - number of receptive fields inputs to the model size of W each one.
+    num_of_classes –the number of classes that the dataset consist of.
+    n_channels - number of features representing one node.
+    Output:
+    model - CNN model for graph classification designed by the the paper authors.
+    """
     model = Sequential()
-    model.add(Conv1D(16, kernel_size=k, strides=width, activation='relu', input_shape=(k * width, n_channels)))
+    model.add(Conv1D(16, kernel_size=K, strides=W, activation='relu', input_shape=(K * W, n_channels)))
     model.add(Conv1D(8, kernel_size=10, strides=1, activation='relu', padding='same'))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
@@ -48,6 +69,19 @@ def create_1Dcnn(k, width, num_of_classes, n_channels=1):
 
 
 def create_1DdoubleCnn2(k, w1, w2, num_of_classes):
+    """
+    Description:
+    Creation of 1D CNN model with two inputs for the graph classification.
+    Our design take the vertexes and the edges graphs for classification features.
+    input:
+    W1 - size of receptive field , the number of relative graph verteces inputs into one kernel cnn kernel.
+    W2 - size of receptive field , the number of relative graph edges inputs into one kernel cnn kernel.
+    K - number of receptive fields inputs to the model size of W each one.
+    num_of_classes –the number of classes that the dataset consist of.
+    n_channels - number of features representing one node.
+    Output:
+    model - CNN model for graph classification purposed by us.
+    """
     I1 = Input((k * w1, 1), name='vertex_input')
     C1 = Conv1D(16, kernel_size=k, strides=w1, activation='relu', input_shape=(k * w1, 1))(I1)
     I2 = Input((k * w2, 1), name='edge_input')
@@ -58,12 +92,22 @@ def create_1DdoubleCnn2(k, w1, w2, num_of_classes):
     Dense1 = Dense(128, activation='relu')(F1)
     Drop1 = Dropout(dropout_val)(Dense1)
     SM = Dense(num_of_classes, activation='softmax')(Drop1)
-    ModelAll = Model([I1, I2], SM)
-    ModelAll.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-    return ModelAll
+    model = Model([I1, I2], SM)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
 
 
 def get_recommended_width(name, datasets_path):
+    """
+    Description:
+    Calculates the average number of edges and vertexes of graphs in the current dataset.
+    These values are the recommended W parameter for the Pathchy-San algorithm.
+    input:
+    name – name of the dataset as the directory containing the dataset.
+    datasets_path - the path of the datased.
+    Output:
+    dictionary with average numbber of edges and vertexes.
+    """
     if datasets_path[-1] != '/':
         datasets_path += '/'
     ds_path = datasets_path + name + '/'
@@ -82,13 +126,33 @@ def get_recommended_width(name, datasets_path):
     return {'E': e_avr, 'V': v_avr}
 
 
-def plot_graph(dirname, ds_name, g1_name, g2_name, suptitle, h, k, mode, n_epochs, savefig, showfig, width, test_value):
+def plot_graph(dirname, ds_name, g1_name, g2_name, title, h, k, mode, n_epochs, savefig, showfig, width, test_value):
+    """
+    Description:
+    Plots a graph of a model evaluation method by epochs.
+    input:
+    dirname - name of the directory contatins the history.json file, contains the metrics over epochs.
+    ds_name - name of the dataset for the title.
+    g1_name – name of metric 1 as appears in the history.json file.
+    g2_name – name of metric 2 as appears in the history.json file.
+    title - name of the metric for the title.
+    h - history object of the run
+    k - the parameter k of the current experiment for the graph description.
+    mode - the mode chosen to train the model, for the graph description.
+    n_epochs - the number of epochs.
+    savefig - parameter controls whether saving the graph to pdf file.
+    showfig - parameter controls whether showing the graph automatically afrer run.
+    width -  the parameter W of the current experiment for the graph description.
+    Output:
+    model - CNN model for graph classification designed by the the paper authors.
+    test_value - the metric value for the test-set evaluation.
+    """
     fig = plt.figure()
     txt = '''
     Mode: \'{}\' , K={},  Width=({}), Test {} = {}
-    '''.format(mode, k, ','.join([str(w) for w in width]), suptitle, '%.3f' % test_value)
+    '''.format(mode, k, ','.join([str(w) for w in width]), title, '%.3f' % test_value)
     fig.text(.1, .1, txt)
-    fig.suptitle('Dataset \'{}\' {}'.format(ds_name, suptitle))
+    fig.suptitle('Dataset \'{}\' {}'.format(ds_name, title))
     ax1 = fig.add_axes((.1, .25, .8, .65))
     ax1.set_xlabel('Epochs')
     ax1.plot(list(range(n_epochs)), h.history[g1_name], linestyle=':', label='Validation')
@@ -96,7 +160,7 @@ def plot_graph(dirname, ds_name, g1_name, g2_name, suptitle, h, k, mode, n_epoch
     ax1.plot(list(range(n_epochs)), [test_value] * n_epochs, linestyle='-.', label='Test Result')
     plt.legend(loc='best')
     if savefig:
-        plt.savefig(dirname + '/{}.pdf'.format(suptitle))
+        plt.savefig(dirname + '/{}.pdf'.format(title))
     if showfig:
         plt.show()
     plt.clf()
@@ -153,34 +217,54 @@ Datasets_dict = {
 }
 
 
-def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, test_percent=0.20, val_percent=0.10,
+def train_test(ds_name, K, mode, ds_path='Datasets/', W=None, max_epochs=100, test_percent=0.20, val_percent=0.10,
                batch_size=20, savefig=False, showfig=True):
+    """
+    Description:
+    Training and Evaluating the chosen model on a chosen dataset.
+    input:
+    ds_name – dataset name , as the directory of the dataset.
+    K - number of receptive fields inputs to the model size of W each one.
+    mode - the type of features fed to the classifier. should be in ['vertex','edge','comb','vertex_channels'].
+    ds_path - the path containing the dataset directory.
+    W - size of receptive field , the number of relative graph vertexes inputs into one kernel cnn kernel.
+        should be NaN for recommanded values, integer for costume value of tuple for 'comb' mode.
+    max_epochs - numbebr of maximum numbert of epochs.
+    test_percent - the test set percent from the whole dataset.
+    val_percent - the validation pervent from the train set.
+    batch_size - batch size.
+    savefig - parameter controls whether saving the graph to pdf file.
+    showfig - parameter controls whether showing the graph automatically afrer run.
+    Output:
+    A trained model
+    """
+
     data, labels = prepare_paths(Datasets_dict[ds_name], overwrite=True)
     num_of_classes = len(set(labels.values()))
     rands1 = np.random.random(len(data))
-    if type(width) == int or type(width) == tuple and len(width) == 1:
-        wv = width
-        we = width
-    elif type(width) == tuple:
-        wv = width[0]
-        we = width[1]
+    if type(W) == int or type(W) == tuple and len(W) == 1:
+        wv = W
+        we = W
+    elif type(W) == tuple:
+        wv = W[0]
+        we = W[1]
     else:
         rec_width = get_recommended_width(ds_name, ds_path)
         wv = rec_width['V']
         we = rec_width['E']
         print('Chosen Recommended width values are {} for verteces and {} for edges'.format(wv, we))
     if mode == 'comb':
-        m = create_1DdoubleCnn2(k, wv, we, num_of_classes)
-        width = (wv, we)
+        m = create_1DdoubleCnn2(K, wv, we, num_of_classes)
+        W = (wv, we)
     elif mode == 'vertex':
-        m = create_1Dcnn(k, wv, num_of_classes, n_channels=1)
-        width = (wv,)
+        m = create_1Dcnn(K, wv, num_of_classes, n_channels=1)
+        W = (wv,)
     elif mode == 'edge':
-        m = create_1Dcnn(k, we, num_of_classes)
-        width = (we,)
+        m = create_1Dcnn(K, we, num_of_classes)
+        W = (we,)
     elif mode == 'vertex_channels':
-        m = create_1Dcnn(k, wv, num_of_classes, n_channels=4)
-        width = (wv,)
+        m = create_1Dcnn(K, wv, num_of_classes, n_channels=4)
+        W = (wv,)
     else:
         raise Exception("'mode' parameter should be in ['vertex','edge','comb','vertex_channels'] ")
     X_train_ids = data[rands1 > test_percent]
@@ -190,25 +274,25 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
     X_train_ids = X_train_ids[rands2 > val_percent]
 
     dg_train = data_generator.DataGenerator(X_train_ids, labels, Datasets_dict[ds_name]['path'],
-                                            len(set(labels.values())), width=width, k=k,
+                                            len(set(labels.values())), width=W, k=K,
                                             mode=mode, batch_size=batch_size)
     dg_test = data_generator.DataGenerator(X_test_ids, labels, Datasets_dict[ds_name]['path'],
-                                           len(set(labels.values())), width=width, k=k,
+                                           len(set(labels.values())), width=W, k=K,
                                            mode=mode)
     dg_val = data_generator.DataGenerator(X_val_ids, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())),
-                                          width=width, k=k,
+                                          width=W, k=K,
                                           mode=mode)
-    dirname = 'TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name, mode, k, '_'.join([str(w) for w in width]))
-    h = m.fit_generator(dg_train, epochs=n_epochs, verbose=2,
+    dirname = 'TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name, mode, K, '_'.join([str(w) for w in W]))
+    h = m.fit_generator(dg_train, epochs=max_epochs, verbose=2,
                         callbacks=[TensorBoard(dirname), EarlyStopping(patience=10, monitor='val_acc')],
                         validation_data=dg_val.getallitems(), workers=1)
     X_test, y_test = dg_test.getallitems()
     ev = m.evaluate(X_test, y_test)
     with open(dirname + '/history.json', 'w') as file:
         file.write(json.dumps(h.history))
-    plot_graph(dirname, ds_name, 'val_acc', 'acc', 'Accuracy', h, k, mode, len(h.epoch), savefig, showfig, width, ev[1])
-    plot_graph(dirname, ds_name, 'val_loss', 'loss', 'Loss', h, k, mode, len(h.epoch), savefig, showfig, width, ev[0])
-
+    plot_graph(dirname, ds_name, 'val_acc', 'acc', 'Accuracy', h, K, mode, len(h.epoch), savefig, showfig, W, ev[1])
+    plot_graph(dirname, ds_name, 'val_loss', 'loss', 'Loss', h, K, mode, len(h.epoch), savefig, showfig, W, ev[0])
+    return m
 
 dataset_names = ['mutag', 'DD', 'enzymes', 'NCI1', 'collab', 'imdb_action_romance',
                  "reddit_iama_askreddit_atheism_trollx", "reddit_multi_5K", "imdb_comedy_romance_scifi"]
@@ -220,5 +304,5 @@ width = None  # None for default recommended values,
 # for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
 k = 10  # common values: 5,10
 
-train_test(ds_name=dataset, k=k, mode=mode, width=width, n_epochs=50, test_percent=0.2, batch_size=20, savefig=True,
+train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=True,
            showfig=False)
