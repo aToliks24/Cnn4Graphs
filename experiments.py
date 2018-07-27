@@ -8,6 +8,7 @@ import json
 np.random.seed(7)
 import networkx as nx
 import matplotlib.pyplot as plt
+dropout_val = 0 # 0.5
 
 def prepare_paths(dataset_dict,overwrite=False):
     data_dir = dataset_dict['path']
@@ -36,7 +37,7 @@ def create_1Dcnn(k,width, num_of_classes,n_channels=1):
     model.add(Conv1D(8, kernel_size=10, strides=1, activation='relu',padding='same'))
     model.add(Flatten())
     model.add(Dense(128,activation='relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(dropout_val))
     model.add(Dense(num_of_classes, activation='softmax'))
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])  # optimizer, metrics
     return model
@@ -50,7 +51,7 @@ def create_1DdoubleCnn2(k,w1,w2 ,num_of_classes):
     C3=Conv1D(8, kernel_size=10, strides=1, activation='relu',padding='same')(conc)
     F1=Flatten()(C3)
     Dense1=Dense(128,activation='relu')(F1)
-    Drop1=Dropout(0.5)(Dense1)
+    Drop1=Dropout(dropout_val)(Dense1)
     SM=Dense(num_of_classes, activation='softmax')(Drop1)
     ModelAll=Model([I1,I2],SM)
     ModelAll.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -119,7 +120,28 @@ Datasets_dict={
              'labels': 'Datasets/collab/collab.label',
              'data': 'Datasets/collab/collab.list',
 
-             }
+             },
+    'imdb_action_romance': {'path': 'Datasets/imdb_action_romance/',
+               'labels': 'Datasets/imdb_action_romance/imdb_action_romance.label',
+               'data': 'Datasets/imdb_action_romance/imdb_action_romance.list',
+
+               },
+    'reddit_iama_askreddit_atheism_trollx': {'path': 'Datasets/reddit_iama_askreddit_atheism_trollx/',
+                            'labels': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.label',
+                            'data': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.list',
+
+                            },
+    'reddit_multi_5K': {'path': 'Datasets/reddit_multi_5K/',
+                                             'labels': 'Datasets/reddit_multi_5K/reddit_multi_5K.label',
+                                             'data': 'Datasets/reddit_multi_5K/reddit_multi_5K.list',
+
+                                             }
+        ,
+    'imdb_comedy_romance_scifi': {'path': 'Datasets/imdb_comedy_romance_scifi/',
+                                             'labels': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.label',
+                                             'data': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.list',
+
+                                             }
 
           }
 
@@ -180,11 +202,11 @@ def train_test(ds_name, k, mode, ds_path='Datasets/', width=None, n_epochs=100, 
 
 
 
-dataset_names=['mutag','DD','enzymes','NCI1', 'collab']
+dataset_names=['mutag','DD','enzymes','NCI1', 'collab', 'imdb_action_romance', "reddit_iama_askreddit_atheism_trollx", "reddit_multi_5K", "imdb_comedy_romance_scifi"]
 modes=['vertex','edge','comb','vertex_channels']
 
-dataset=dataset_names[4]    #choose dataset frome dataset-list
-mode=modes[0]               #choose mode frome mode-list
+dataset=dataset_names[7]    #choose dataset frome dataset-list
+mode=modes[3]               #choose mode frome mode-list
 width=None                  #None for default recommended values,
                             #for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
 k=10                        #common values: 5,10
