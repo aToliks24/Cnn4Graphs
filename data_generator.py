@@ -188,6 +188,10 @@ class DataGenerator(keras.utils.Sequence):
         xmldoc = minidom.parse(curr_path)
         itemlist = xmldoc.getElementsByTagName('edge')
         e_graph = nx.line_graph(v_graph)
+        if itemlist[0].firstChild==None:
+            ds=nx.degree_centrality(v_graph)
+            nx.set_node_attributes(v_graph,ds,'label')
+            return v_graph
         for item in itemlist:
             value = float(item.firstChild.TEXT_NODE)
             source = item.attributes['source'].value
