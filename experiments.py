@@ -274,13 +274,13 @@ def train_test(ds_name, K, mode, ds_path='Datasets/', W=None, max_epochs=100, te
     X_train_ids = X_train_ids[rands2 > val_percent]
 
     dg_train = data_generator.DataGenerator(X_train_ids, labels, Datasets_dict[ds_name]['path'],
-                                            len(set(labels.values())), width=W, k=K,
+                                            len(set(labels.values())), W=W, k=K,
                                             mode=mode, batch_size=batch_size)
     dg_test = data_generator.DataGenerator(X_test_ids, labels, Datasets_dict[ds_name]['path'],
-                                           len(set(labels.values())), width=W, k=K,
+                                           len(set(labels.values())), W=W, k=K,
                                            mode=mode)
     dg_val = data_generator.DataGenerator(X_val_ids, labels, Datasets_dict[ds_name]['path'], len(set(labels.values())),
-                                          width=W, k=K,
+                                          W=W, k=K,
                                           mode=mode)
     dirname = 'TB_Dataset-{}__Mode-{}__K-{}__Width-{}'.format(ds_name, mode, K, '_'.join([str(w) for w in W]))
     h = m.fit_generator(dg_train, epochs=max_epochs, verbose=2,
