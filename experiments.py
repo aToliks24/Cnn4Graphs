@@ -10,7 +10,7 @@ np.random.seed(7)
 import networkx as nx
 import matplotlib.pyplot as plt
 
-dropout_val = 0  # 0.5
+
 
 
 def prepare_paths(dataset_dict, overwrite=False):
@@ -83,15 +83,15 @@ def create_1DdoubleCnn2(k, w1, w2, num_of_classes):
     model - CNN model for graph classification purposed by us.
     """
     I1 = Input((k * w1, 1), name='vertex_input')
-    C1 = Conv1D(16, kernel_size=k, strides=w1, activation='relu', input_shape=(k * w1, 1))(I1)
+    C1 = Conv1D(16, kernel_size=k, strides=w1, activation='relu', input_shape=(k * w1, 1),name='Vertexes-Convolution')(I1)
     I2 = Input((k * w2, 1), name='edge_input')
-    C2 = Conv1D(16, kernel_size=k, strides=w2, activation='relu', input_shape=(k * w2, 1))(I2)
+    C2 = Conv1D(16, kernel_size=k, strides=w2, activation='relu', input_shape=(k * w2, 1),name='Edges-Convolution')(I2)
     conc = Concatenate()([C1, C2])
-    C3 = Conv1D(8, kernel_size=10, strides=1, activation='relu', padding='same')(conc)
+    C3 = Conv1D(8, kernel_size=10, strides=1, activation='relu', padding='same',name='Combining-Conv')(conc)
     F1 = Flatten()(C3)
-    Dense1 = Dense(128, activation='relu')(F1)
+    Dense1 = Dense(128, activation='relu',name='Dense')(F1)
     Drop1 = Dropout(dropout_val)(Dense1)
-    SM = Dense(num_of_classes, activation='softmax')(Drop1)
+    SM = Dense(num_of_classes, activation='softmax',name= 'Softmax-Layer')(Drop1)
     model = Model([I1, I2], SM)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
@@ -182,6 +182,15 @@ Datasets_dict = {
 
            }
     ,
+    'ptc':{'path': 'Datasets/ptc/',
+           'labels': 'Datasets/ptc/ptc.label',
+           'data': 'Datasets/ptc/ptc.list'
+    },
+    'proteins':{'path': 'Datasets/proteins/',
+           'labels': 'Datasets/proteins/proteins.label',
+           'data': 'Datasets/proteins/proteins.list'
+    },
+
     'NCI1': {'path': 'Datasets/NCI1/',
              'labels': 'Datasets/NCI1/NCI1.label',
              'data': 'Datasets/NCI1/NCI1.list',
@@ -294,15 +303,18 @@ def train_test(ds_name, K, mode, ds_path='Datasets/', W=None, max_epochs=100, te
     plot_graph(dirname, ds_name, 'val_loss', 'loss', 'Loss', h, K, mode, len(h.epoch), savefig, showfig, W, ev[0])
     return m
 
-dataset_names = ['mutag', 'DD', 'enzymes', 'NCI1', 'collab', 'imdb_action_romance',
-                 "reddit_iama_askreddit_atheism_trollx", "reddit_multi_5K", "imdb_comedy_romance_scifi"]
-modes = ['vertex', 'edge', 'comb', 'vertex_channels']
+if __name__=='__main__':
+    dataset_names = ['mutag', 'DD', 'enzymes', 'NCI1', 'collab', 'imdb_action_romance',
+                     "reddit_iama_askreddit_atheism_trollx", "reddit_multi_5K", "imdb_comedy_romance_scifi",'ptc']
+    modes = ['vertex', 'edge', 'comb', 'vertex_channels']
 
-dataset = dataset_names[7]  # choose dataset frome dataset-list
-mode = modes[3]  # choose mode frome mode-list
-width = None  # None for default recommended values,
-# for costume values use tuple (vertex_width,edge_width) if 'comb' mode, otherwise use integer
-k = 10  # common values: 5,10
+    dropout_val = 0.5   #dropout
+    dataset = 'mutag'   # choose dataset frome dataset-list
+    mode = modes[1]     # choose mode frome mode-list
+    width = None        # None for default recommended values,
+                        # for costume values: if 'comb' mode use tuple (vertex_width,edge_width)
+                        #                     otherwise use integer
+    k = 10              # common values: 5,10
+    train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=False,
+               showfig=True)
 
-train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=True,
-           showfig=False)
