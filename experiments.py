@@ -5,11 +5,9 @@ import data_generator
 import numpy as np
 import os
 import json
-
-np.random.seed(7)
 import networkx as nx
 import matplotlib.pyplot as plt
-
+np.random.seed(7)
 
 
 
@@ -315,6 +313,6 @@ if __name__=='__main__':
                         # for costume values: if 'comb' mode use tuple (vertex_width,edge_width)
                         #                     otherwise use integer
     k = 10              # common values: 5,10
-    train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=False,
+    train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=True,
                showfig=True)
 
