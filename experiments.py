@@ -60,7 +60,7 @@ def create_1Dcnn(K, W, num_of_classes, n_channels=1):
     model.add(Conv1D(8, kernel_size=10, strides=1, activation='relu', padding='same'))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
-    model.add(Dropout(dropout_val))
+    model.add(Dropout(0.5))
     model.add(Dense(num_of_classes, activation='softmax'))
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])  # optimizer, metrics
     return model
@@ -88,7 +88,7 @@ def create_1DdoubleCnn2(k, w1, w2, num_of_classes):
     C3 = Conv1D(8, kernel_size=10, strides=1, activation='relu', padding='same',name='Combining-Conv')(conc)
     F1 = Flatten()(C3)
     Dense1 = Dense(128, activation='relu',name='Dense')(F1)
-    Drop1 = Dropout(dropout_val)(Dense1)
+    Drop1 = Dropout(0.5)(Dense1)
     SM = Dense(num_of_classes, activation='softmax',name= 'Softmax-Layer')(Drop1)
     model = Model([I1, I2], SM)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -162,66 +162,6 @@ def plot_graph(dirname, ds_name, g1_name, g2_name, title, h, k, mode, n_epochs, 
     if showfig:
         plt.show()
     plt.clf()
-
-
-Datasets_dict = {
-    'enzymes': {'path': 'Datasets/enzymes/',
-                'labels': 'Datasets/enzymes/enzymes.label',
-                'data': 'Datasets/enzymes/enzymes.list'
-                },
-    'mutag': {'path': 'Datasets/mutag/',
-              'labels': 'Datasets/mutag/mutag.label',
-              'data': 'Datasets/mutag/mutag.list',
-
-              },
-    'DD': {'path': 'Datasets/DD/',
-           'labels': 'Datasets/DD/DD.label',
-           'data': 'Datasets/DD/DD.list'
-
-           }
-    ,
-    'ptc':{'path': 'Datasets/ptc/',
-           'labels': 'Datasets/ptc/ptc.label',
-           'data': 'Datasets/ptc/ptc.list'
-    },
-    'proteins':{'path': 'Datasets/proteins/',
-           'labels': 'Datasets/proteins/proteins.label',
-           'data': 'Datasets/proteins/proteins.list'
-    },
-
-    'NCI1': {'path': 'Datasets/NCI1/',
-             'labels': 'Datasets/NCI1/NCI1.label',
-             'data': 'Datasets/NCI1/NCI1.list',
-
-             },
-    'collab': {'path': 'Datasets/collab/',
-               'labels': 'Datasets/collab/collab.label',
-               'data': 'Datasets/collab/collab.list',
-
-               },
-    'imdb_action_romance': {'path': 'Datasets/imdb_action_romance/',
-                            'labels': 'Datasets/imdb_action_romance/imdb_action_romance.label',
-                            'data': 'Datasets/imdb_action_romance/imdb_action_romance.list',
-
-                            },
-    'reddit_iama_askreddit_atheism_trollx': {'path': 'Datasets/reddit_iama_askreddit_atheism_trollx/',
-                                             'labels': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.label',
-                                             'data': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.list',
-
-                                             },
-    'reddit_multi_5K': {'path': 'Datasets/reddit_multi_5K/',
-                        'labels': 'Datasets/reddit_multi_5K/reddit_multi_5K.label',
-                        'data': 'Datasets/reddit_multi_5K/reddit_multi_5K.list',
-
-                        }
-    ,
-    'imdb_comedy_romance_scifi': {'path': 'Datasets/imdb_comedy_romance_scifi/',
-                                  'labels': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.label',
-                                  'data': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.list',
-
-                                  }
-
-}
 
 
 def train_test(ds_name, K, mode, ds_path='Datasets/', W=None, max_epochs=100, test_percent=0.20, val_percent=0.10,
@@ -301,18 +241,63 @@ def train_test(ds_name, K, mode, ds_path='Datasets/', W=None, max_epochs=100, te
     plot_graph(dirname, ds_name, 'val_loss', 'loss', 'Loss', h, K, mode, len(h.epoch), savefig, showfig, W, ev[0])
     return m
 
-if __name__=='__main__':
-    dataset_names = ['mutag', 'DD', 'enzymes', 'NCI1', 'collab', 'imdb_action_romance',
-                     "reddit_iama_askreddit_atheism_trollx", "reddit_multi_5K", "imdb_comedy_romance_scifi",'ptc']
-    modes = ['vertex', 'edge', 'comb', 'vertex_channels']
 
-    dropout_val = 0.5   #dropout
-    dataset = 'mutag'   # choose dataset frome dataset-list
-    mode = modes[0]     # choose mode frome mode-list
-    width = None        # None for default recommended values,
-                        # for costume values: if 'comb' mode use tuple (vertex_width,edge_width)
-                        #                     otherwise use integer
-    k = 10              # common values: 5,10
-    train_test(ds_name=dataset, K=k, mode=mode, W=width, max_epochs=50, test_percent=0.2, batch_size=20, savefig=True,
-               showfig=True)
 
+Datasets_dict = {
+    'enzymes': {'path': 'Datasets/enzymes/',
+                'labels': 'Datasets/enzymes/enzymes.label',
+                'data': 'Datasets/enzymes/enzymes.list'
+                },
+    'mutag': {'path': 'Datasets/mutag/',
+              'labels': 'Datasets/mutag/mutag.label',
+              'data': 'Datasets/mutag/mutag.list',
+
+              },
+    'DD': {'path': 'Datasets/DD/',
+           'labels': 'Datasets/DD/DD.label',
+           'data': 'Datasets/DD/DD.list'
+
+           }
+    ,
+    'ptc':{'path': 'Datasets/ptc/',
+           'labels': 'Datasets/ptc/ptc.label',
+           'data': 'Datasets/ptc/ptc.list'
+    },
+    'proteins':{'path': 'Datasets/proteins/',
+           'labels': 'Datasets/proteins/proteins.label',
+           'data': 'Datasets/proteins/proteins.list'
+    },
+
+    'NCI1': {'path': 'Datasets/NCI1/',
+             'labels': 'Datasets/NCI1/NCI1.label',
+             'data': 'Datasets/NCI1/NCI1.list',
+
+             },
+    'collab': {'path': 'Datasets/collab/',
+               'labels': 'Datasets/collab/collab.label',
+               'data': 'Datasets/collab/collab.list',
+
+               },
+    'imdb_action_romance': {'path': 'Datasets/imdb_action_romance/',
+                            'labels': 'Datasets/imdb_action_romance/imdb_action_romance.label',
+                            'data': 'Datasets/imdb_action_romance/imdb_action_romance.list',
+
+                            },
+    'reddit_iama_askreddit_atheism_trollx': {'path': 'Datasets/reddit_iama_askreddit_atheism_trollx/',
+                                             'labels': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.label',
+                                             'data': 'Datasets/reddit_iama_askreddit_atheism_trollx/reddit_iama_askreddit_atheism_trollx.list',
+
+                                             },
+    'reddit_multi_5K': {'path': 'Datasets/reddit_multi_5K/',
+                        'labels': 'Datasets/reddit_multi_5K/reddit_multi_5K.label',
+                        'data': 'Datasets/reddit_multi_5K/reddit_multi_5K.list',
+
+                        }
+    ,
+    'imdb_comedy_romance_scifi': {'path': 'Datasets/imdb_comedy_romance_scifi/',
+                                  'labels': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.label',
+                                  'data': 'Datasets/imdb_comedy_romance_scifi/imdb_comedy_romance_scifi.list',
+
+                                  }
+
+}
