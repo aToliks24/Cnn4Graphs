@@ -310,7 +310,7 @@ if __name__=='__main__':
 
     dropout_val = 0.5   #dropout
     dataset = 'mutag'   # choose dataset frome dataset-list
-    mode = modes[1]     # choose mode frome mode-list
+    mode = modes[0]     # choose mode frome mode-list
     width = None        # None for default recommended values,
                         # for costume values: if 'comb' mode use tuple (vertex_width,edge_width)
                         #                     otherwise use integer
